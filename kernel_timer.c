@@ -9,7 +9,7 @@
 #define KERNEL_TIMER_NAME "kernel_timer"
 
 static int kernel_timer_usage = 0;
-int*kernel_call_cnt = 0;
+unsigned char*kernel_call_cnt = 0;
 
 int kernel_timer_open(struct inode *, struct file *);
 int kernel_timer_release(struct inode *, struct file *);
@@ -46,7 +46,7 @@ static void kernel_timer_blink(unsigned long timeout) {
 	struct struct_mydata *p_data = (struct struct_mydata*)timeout;
 
 	printk("kernel_timer_blink %d\n", p_data->count);
-    *kernel_call_cnt++; //count calling
+    kernel_call_cnt[0]++; //count calling
 	//p_data->count++;
     p_data->count--;
     /*
@@ -103,14 +103,14 @@ int __init kernel_timer_init(void)
 	init_timer(&(mydata.timer));
 
 	printk("init module\n");
-    kernel_call_cnt = (int*)vmalloc(4);
+    kernel_call_cnt = (unsigned char*)vmalloc(4);
 	return 0;
 }
 
 void __exit kernel_timer_exit(void)
 {
 	printk("kernel_timer_exit\n");
-    printk("%d\n", *kernel_call_cnt); //print
+    printk("%d\n", kernel_call_cnt[0]); //print
     vfree(kernel_call_cnt); //free
 	kernel_timer_usage = 0;
 	del_timer_sync(&mydata.timer);
