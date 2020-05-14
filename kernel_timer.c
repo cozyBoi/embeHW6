@@ -4,10 +4,12 @@
 #include <linux/platform_device.h>
 #include <linux/kernel.h>
 #include <linux/uaccess.h>
+#include <linux/vmalloc.h>
 
 #define KERNEL_TIMER_NAME "kernel_timer"
 
 static int kernel_timer_usage = 0;
+int*kernel_call_cnt = 0;
 
 int kernel_timer_open(struct inode *, struct file *);
 int kernel_timer_release(struct inode *, struct file *);
@@ -44,7 +46,7 @@ static void kernel_timer_blink(unsigned long timeout) {
 	struct struct_mydata *p_data = (struct struct_mydata*)timeout;
 
 	printk("kernel_timer_blink %d\n", p_data->count);
-
+    *kernel_call_cnt++; //count calling
 	//p_data->count++;
     p_data->count--;
     /*
@@ -78,7 +80,7 @@ ssize_t kernel_timer_write(struct file *inode, const char *gdata, size_t length,
 
 	del_timer_sync(&mydata.timer);
 
-	mydata.timer.expires = jiffies + (3 * HZ); //3초후에 실행
+	mydata.timer.expires = jiffies + (3 * HZ); //after 3 second, call "blink"
 	mydata.timer.data = (unsigned long)&mydata;
 	mydata.timer.function = kernel_timer_blink;
 
@@ -101,15 +103,18 @@ int __init kernel_timer_init(void)
 	init_timer(&(mydata.timer));
 
 	printk("init module\n");
+    kernel_call_cnt = (int*)vmalloc(4);
 	return 0;
 }
 
 void __exit kernel_timer_exit(void)
 {
 	printk("kernel_timer_exit\n");
+    printk("%d\n", *kernel_call_cnt); //print
+    vfree(kernel_call_cnt); //free
 	kernel_timer_usage = 0;
 	del_timer_sync(&mydata.timer);
-
+    
 	unregister_chrdev(major, KERNEL_TIMER_NAME);
 }
 
