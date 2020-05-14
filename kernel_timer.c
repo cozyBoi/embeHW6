@@ -104,6 +104,7 @@ int __init kernel_timer_init(void)
 
 	printk("init module\n");
     kernel_call_cnt = (unsigned char*)vmalloc(4);
+    kernel_call_cnt[0] = 0;
 	return 0;
 }
 
